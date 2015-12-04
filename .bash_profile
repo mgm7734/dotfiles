@@ -1,12 +1,14 @@
 # Add `~/bin` to the `$PATH`
-export PATH="$HOME/bin:$PATH";
+export PATH="$HOME/bin:$HOME/Google Drive/bin:$PATH";
 
 # Load the shell dotfiles, and then some:
 # * ~/.path can be used to extend `$PATH`.
 # * ~/.extra can be used for other settings you don’t want to commit.
-for file in ~/.{path,bash_prompt,exports,aliases,functions,extra}; do
+for file in ~/.{path,exports,aliases,functions,extra}; do
 	[ -r "$file" ] && [ -f "$file" ] && source "$file";
+	[ -r "$file" ] && [ -f "$file" ] && echo  did "$file";
 done;
+source ~/bash-git-prompt/gitprompt.sh
 unset file;
 
 # Case-insensitive globbing (used in pathname expansion)
@@ -46,6 +48,31 @@ complete -W "NSGlobalDomain" defaults;
 
 # Add `killall` tab completion for common apps
 complete -o "nospace" -W "Contacts Calendar Dock Finder Mail Safari iTunes SystemUIServer Terminal Twitter" killall;
+
+# error
+error() {
+    echo $1
+    exit ${2-1}
+}
+
+# plantuml
+plantuml() {
+    ext=${1-uml}
+    type=png
+    
+    while true; do
+	for in in *.$ext; do
+	    out=`basename $in .$ext`.$type
+	    if [ $out -ot $in ] ; then
+		java -jar ~/opt/plantuml/plantuml.jar -t$type $in
+		echo -n "created $out "; date
+		# command ""open -g ${basename $out}*.$type""
+	fi
+	done
+	sleep 10
+    done
+}
+
 
 if [ -e ~/.bash_local ]; then
     source ~/.bash_local
