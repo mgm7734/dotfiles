@@ -55,11 +55,15 @@ error() {
     exit ${2-1}
 }
 
+################
+# aws
+export PATH="$PATH:~/Library/Python/2.7/bin"
+
 # plantuml
 plantuml() {
     ext=${1-uml}
     type=png
-    
+
     while true; do
 	for in in *.$ext; do
 	    out=`basename $in .$ext`.$type
@@ -73,7 +77,92 @@ plantuml() {
     done
 }
 
+####+pidfiles
+
+# Use in script like this;
+#
+#     pf=$(pidfile_name)
+#     pidfile_create $$ "$pf"
+#     trap 'cleanup' INT TERM EXIT
+#     # do stuff
+
+#===  FUNCTION  ================================================================
+#          NAME:  pidfile_name
+#   DESCRIPTION:  create a predictable pid file name, put it in the right inode
+#    PARAMETERS:  none
+#       RETURNS:  path and filename
+#===============================================================================
+function pidfile_name() {
+  myfile=$(basename "$0" .sh)
+  whoiam=$(whoami)
+  mypidfile=/tmp/$myfile.pid
+  [[ "$whoiam" == 'root' ]] && mypidfile=/var/run/$myfile.pid
+  echo $mypidfile
+}
+
+
+#===  FUNCTION  ================================================================
+#          NAME:  pidfile_cleanup
+#   DESCRIPTION:  post service processing (clean temp space,pid files)
+#    PARAMETERS:  none
+#       RETURNS:  none
+#===============================================================================
+function pidfile_cleanup () {
+  #Don't recurse in the exit trap
+  trap - INT TERM EXIT
+  #remove the pid file cleanly on exit++
+  [[ -f "$mypidfile" ]] && rm "$mypidfile"
+  #add other post processing cleanup here
+  exit
+}
+
+
+#===  FUNCTION  ================================================================
+#          NAME:  isrunning
+#   DESCRIPTION:  is any previous instance of this script already running
+#    PARAMETERS:  pidfile location
+#       RETURNS:  boolean 0|1
+#===============================================================================
+function isrunning() {
+  pidfile="$1"
+  [[ ! -f "$pidfile" ]] && return 1  #pid file is nonexistent
+  procpid=$(<"$pidfile")
+  [[ -z "$procpid" ]] && return 1  #pid file contains no pid
+  # check process list for pid existence and is an instance of this script
+  [[ ! $(ps -p $procpid | grep $(basename $0)) == "" ]] && value=0 || value=1
+  return $value
+}
+
+#===  FUNCTION  ================================================================
+#          NAME:  createpidfile
+#   DESCRIPTION:  atomic creation of pid file with no race condition
+#    PARAMETERS:  the pid to put in the file, the filename to use as a lock
+#       RETURNS:  none
+#===============================================================================
+function pidfile_create() {
+  mypid=$1
+  pidfile=$2
+  #Close stderr, don't overwrite existing file, shove my pid in the lock file.
+  $(exec 2>&-; set -o noclobber; echo "$mypid" > "$pidfile")
+  [[ ! -f "$pidfile" ]] && exit #Lock file creation failed
+  procpid=$(<"$pidfile")
+  [[ $mypid -ne $procpid ]] && {
+    #I'm not the pid in the lock file
+    # Is the process pid in the lockfile still running?
+    isrunning "$pidfile" || {
+      # No.  Kill the pidfile and relaunch ourselves properly.
+      rm "$pidfile"
+      $0 $@ &
+    }
+    exit
+  }
+}
+####-pidfiles
 
 if [ -e ~/.bash_local ]; then
     source ~/.bash_local
 fi
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="/Users/mgm/.sdkman"
+[[ -s "/Users/mgm/.sdkman/bin/sdkman-init.sh" ]] && source "/Users/mgm/.sdkman/bin/sdkman-init.sh"
