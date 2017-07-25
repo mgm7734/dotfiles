@@ -30,7 +30,7 @@ function getter() {
     var path
     if (arguments.length == 1)
         path = arguments[0]
-    else
+1    else
         path = [].slice.call(arguments)
     return function(obj) {
         return getPath(obj, path)
@@ -57,6 +57,7 @@ Array.prototype.limit = function(n) {
 
 Object.prototype.tap = function(f) {f(this); return this}
 
+/*
 Function Set(hashFunction) {
 	this._hashFunction = hashFunction || JSON.stringify;
 	this._values = {};
@@ -91,4 +92,23 @@ Set.prototype = {
 			iteratorFunction.call(thisObj, this._values[value]);
 		}
 	}
+}
+*/
+
+///////// PiLR
+
+function addProjectOwner(projCode, username) {
+    var projId = db.project.findOne({code: projCode})._id
+    var newOwnerId=db.user.findOne({username: username})._id
+    if (db.authorization.count({instanceId: projId, permission: {$exists: 0}, uid: newOwnerId}) > 0) {
+        printjson('already an owner')
+        return
+    }
+    var someOwnerAuth = db.authorization.findOne({instanceId: projId, permission: {$exists: 0}})
+    printjson(someOwnerAuth.uid)
+    return db.authorization.find({instanceId: projId, uid: someOwnerAuth.uid}).forEach(auth => {
+        auth.uid = newOwnerId
+        delete auth._id
+        db.authorization.insert(auth)
+    })
 }
