@@ -159,11 +159,24 @@ function pidfile_create() {
     exit
   }
 }
-####-pidfiles
+###-pidfiles
+
+#=== per direct bash settings ================================================
+
+function cd() { builtin cd "$@" && chpwd; }
+function pushd() { builtin pushd "$@" && chpwd; }
+function popd() { builtin popd "$@" && chpwd; }
+function chpwd() {
+    if [ -e PROJECT_SETTINGS ] ; then
+      . ./PROJECT_SETTINGS
+    fi
+}
+#===============================================================================
 
 if [ -e ~/.bash_local ]; then
     source ~/.bash_local
 fi
+
 if [ -f $(brew --prefix)/etc/bash_completion ]; then
   . $(brew --prefix)/etc/bash_completion
 fi
