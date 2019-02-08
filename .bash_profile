@@ -1,6 +1,8 @@
 # Add `~/bin` to the `$PATH`
 export PATH="$HOME/bin:$HOME/Google Drive/bin:$PATH";
 
+export ANDROID_HOME=/Users/mgm/Library/Android/sdk
+
 # Load the shell dotfiles, and then some:
 # * ~/.path can be used to extend `$PATH`.
 # * ~/.extra can be used for other settings you don’t want to commit.
@@ -161,6 +163,9 @@ function pidfile_create() {
 
 if [ -e ~/.bash_local ]; then
     source ~/.bash_local
+fi
+if [ -f $(brew --prefix)/etc/bash_completion ]; then
+  . $(brew --prefix)/etc/bash_completion
 fi
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
