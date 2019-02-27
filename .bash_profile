@@ -167,8 +167,25 @@ function cd() { builtin cd "$@" && chpwd; }
 function pushd() { builtin pushd "$@" && chpwd; }
 function popd() { builtin popd "$@" && chpwd; }
 function chpwd() {
-    if [ -e PROJECT_SETTINGS ] ; then
-      . ./PROJECT_SETTINGS
+    file=`/bin/pwd`/PROJECT_SETTINGS
+    whitelist=~/.proj-settings-whitelist
+    if [ -e $file ] ; then
+      ok=true
+      if ! grep $file $whitelist ; then
+        read -r -p "Whitelist $file for sourcing? [y/N]" answer
+        case $answer in
+          [yY])
+            echo $file >> $whitelist
+            ;;
+          *)
+            ok=false
+        esac
+      fi
+
+      if [ "$ok" == true ] ; then
+        echo Evalutating $file
+        . $file
+      fi
     fi
 }
 #===============================================================================
