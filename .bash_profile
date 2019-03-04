@@ -162,33 +162,7 @@ function pidfile_create() {
 ###-pidfiles
 
 #=== per direct bash settings ================================================
-
-function cd() { builtin cd "$@" && chpwd; }
-function pushd() { builtin pushd "$@" && chpwd; }
-function popd() { builtin popd "$@" && chpwd; }
-function chpwd() {
-    file=`/bin/pwd`/PROJECT_SETTINGS
-    whitelist=~/.proj-settings-whitelist
-    if [ -e $file ] ; then
-      ok=true
-      if ! grep $file $whitelist ; then
-        read -r -p "Whitelist $file for sourcing? [y/N]" answer
-        case $answer in
-          [yY])
-            echo $file >> $whitelist
-            ;;
-          *)
-            ok=false
-        esac
-      fi
-
-      if [ "$ok" == true ] ; then
-        echo Evalutating $file
-        . $file
-      fi
-    fi
-}
-#===============================================================================
+source ~/dotfiles/project-settings.sh
 
 if [ -e ~/.bash_local ]; then
     source ~/.bash_local
