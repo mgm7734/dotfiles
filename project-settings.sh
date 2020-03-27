@@ -1,5 +1,7 @@
-# When changing to a directing with  a PROJECT_SETTINGS file, source the file if given approval.
-# Don't ask again for the same file as long as its checkusm is the same.
+# Add
+#    source project-settings.sh
+# to your .bash_profile. When changing to a directing with a PROJECT_SETTINGS file,
+# this will source the file if given approval. Approval is sticky as long as the checksum doesn't change.
 #
 function cd() { builtin cd "$@" && source-project-settings; }
 function pushd() { builtin pushd "$@" && source-project-settings; }
@@ -35,3 +37,4 @@ function source-project-settings() {
       fi
     fi
 }
+source-project-settings # for newly created shells
