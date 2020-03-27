@@ -161,8 +161,6 @@ function pidfile_create() {
 }
 ###-pidfiles
 
-#=== per direct bash settings ================================================
-source ~/dotfiles/project-settings.sh
 
 if [ -e ~/.bash_local ]; then
     source ~/.bash_local
@@ -175,3 +173,7 @@ fi
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="/Users/mgm/.sdkman"
 [[ -s "/Users/mgm/.sdkman/bin/sdkman-init.sh" ]] && source "/Users/mgm/.sdkman/bin/sdkman-init.sh"
+
+# for newly created shells
+source ~/dotfiles/project-settings.sh
+export PATH="/usr/local/opt/mongodb-community@3.4/bin:$PATH"
