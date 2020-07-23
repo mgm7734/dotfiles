@@ -41,46 +41,47 @@ DBCollection.prototype.get = function(id) { return this.findOne({_id: id}) }
 q('project', {code: /^r21/}).child('instrument').find()
    */
 function LazyQuery(collectionName, opts={}) {
-    const query = opts.query || {};
-    const stack = opts.stack || [];
-    Object.assign(this, {
-        collectionName, query,
-        collection: db[collectionName],
-
-        find(query = {}) {
-            return this.collection.find({$and: [this.query, query]})
-        },
-        count() {  return this.collection.count(this.query) },
-        id() { return this.prop('_id')},
-        code() { return this.prop('code)') },
-        at(ix) { return this.find().skip(ix).next() },
-        prop(p) { return this.find().map(d=>d[p]) },
-        id() { return this.prop('_id' )},
-        code() { return this.prop('code')},
-
-        /** Refine the current query */
-        where(q) {
-            return new LazyQuery(this.collectionName,
-                                 Object.assign({}, opts, {query: { $and: [ this.query, q ] }}) );
-        },
-
-        /** Chain a subquery */
-        q(cn, q) {
-            return new LazyQuery(cn, { query: q, stack: [ this, ...stack ] })
-        },
-        child(childName, prop = null) {
-            if (!prop) prop = this.collectionName;
-            let parentIds = this.id();
-            //return new LazyQuery(childName, {query: { [prop] : { $in: parentIds } }})
-            return this.q(childName, { [prop] : { $in: parentIds } });
-        },
-        parent(parentName, prop = null) {
-            if (!prop) prop = parentName;
-            let parentIds = this.prop(prop);
-            return new LazyQuery(parentName, {query: {_id: {$in: parentIds}}});
-        }
-    })
+    this.query = opts.query || {};
+    this.stack = opts.stack || [];
+    this.collectionName = collectionName;
+    this.collection = db[collectionName];
 }
+Object.assign(LazyQuery.prototype, {
+
+    find(query = {}) {
+        return this.collection.find({$and: [this.query, query]})
+    },
+    count() {  return this.collection.count(this.query) },
+    id() { return this.prop('_id')},
+    code() { return this.prop('code)') },
+    at(ix) { return this.find().skip(ix).next() },
+    prop(p) { return this.find().map(d=>d[p]) },
+    id() { return this.prop('_id' )},
+    code() { return this.prop('code')},
+
+    /** Refine the current query */
+    where(q) {
+        return new LazyQuery(this.collectionName,
+                             Object.assign({}, {stack: this.stack, query: { $and: [ this.query, q ] }}) );
+    },
+
+    /** Chain a subquery */
+    q(cn, q) {
+        return new LazyQuery(cn, { query: q, stack: [ this, ...this.stack ] })
+    },
+    child(childName, prop = null) {
+        if (!prop) prop = this.collectionName;
+        let parentIds = this.id();
+        //return new LazyQuery(childName, {query: { [prop] : { $in: parentIds } }})
+        return this.q(childName, { [prop] : { $in: parentIds } });
+    },
+    parent(parentName, prop = null) {
+        if (!prop) prop = parentName;
+        let parentIds = this.prop(prop);
+        return new LazyQuery(parentName, {query: {_id: {$in: parentIds}}});
+    }
+})
+
 function q(collName, query) { return new LazyQuery(collName, {query}) }
 
-q('project', {code: 'r21testproject'}).child('instrument').child('instrumentConfig').child('emaOtsCardstack', 'configuration').count()
+//q('project', {code: 'r21testproject'}).child('instrument').child('instrumentConfig').child('emaOtsCardstack', 'configuration').count()
