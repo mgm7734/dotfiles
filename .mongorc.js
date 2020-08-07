@@ -31,27 +31,40 @@ function unique(array) {
     return array.filter((el, ix) => array.indexOf(el) == ix)
 }
 
+Array.prototype.flatMap = function(f) { return this.reduce((acc,x) => acc.concat(f(x)), []); }
+
+function csvQuote(value) {
+    if (typeof value == "string") {
+        value = `"${ value.replace(new RegExp('"', 'g'), '""') }"`
+    }
+    return value
+}
+
 DBCollection.prototype.get = function(id) { return this.findOne({_id: id}) }
 
 /**
  * Chainable queries.
  *  Example:
  *    q('project', {code: /^r21/}).child('instrument').child('instrumentConfig')
- *    .child('emaOtsCardstack', 'configuration').prop('code')
-q('project', {code: /^r21/}).child('instrument').find()
+ *        .child('emaOtsCardstack', 'configuration').code()
+ *    q('project', {code: /^r21/}).child('instrument').find()
    */
 function q(collName, query) { return new LazyQuery(collName, query) }
+DBCollection.prototype.q = function (query = {}) { return q(this.getName(), query) }
+
 function LazyQuery(collectionName, query = {}) {
     this.query = query;
     this.collectionName = collectionName;
-    this.collection = db[collectionName];
+    //this.collection = db[collectionName];
 }
 Object.assign(LazyQuery.prototype, {
-
-    find(query = {}) {
-        return this.collection.find({$and: [this.query, query]})
+    collection() {
+        return db[this.collectionName]
     },
-    count() {  return this.collection.count(this.query) },
+    find(query = {}) {
+        return this.collection().find({$and: [this.query, query]})
+    },
+    count() {  return this.collection().count(this.query) },
     at(ix) { return this.find().skip(ix).next() },
     prop(p) { return this.find().map(d=>d[p]) },
     id() { return this.prop('_id' )},
