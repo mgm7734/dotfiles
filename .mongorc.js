@@ -69,6 +69,7 @@ Object.assign(LazyQuery.prototype, {
     prop(p) { return this.find().map(d=>d[p]) },
     id() { return this.prop('_id' )},
     code() { return this.prop('code')},
+    name() { return this.prop('name')},
 
     /** Refine the current query */
     where(q) {
