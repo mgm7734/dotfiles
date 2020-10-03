@@ -33,6 +33,15 @@ function unique(array) {
 
 Array.prototype.flatMap = function(f) { return this.reduce((acc,x) => acc.concat(f(x)), []); }
 
+function arrayToObj(a, keyValFn) {
+    var obj = {};
+    a.forEach((x,i) => {
+        var [k, v] = keyValFn(x,i)
+        obj[k] = v
+    });
+    return obj;
+}
+
 function csvQuote(value) {
     if (typeof value == "string") {
         value = `"${ value.replace(new RegExp('"', 'g'), '""') }"`
@@ -48,13 +57,17 @@ DBCollection.prototype.get = function(id) { return this.findOne({_id: id}) }
  *    q('project', {code: /^r21/}).child('instrument').child('instrumentConfig')
  *        .child('emaOtsCardstack', 'configuration').code()
  *    q('project', {code: /^r21/}).child('instrument').find()
-   */
+ *  Projects using 'pt_card_bin'
+ *    db.emaOtsCardstack.q({'sections.cards.type': 'pt_card_bin'}).parent('instrumentConfig', 'configuration')
+ *       .parent('instrument').parent('project').name()
+ */
 function q(collName, query) { return new LazyQuery(collName, query) }
 DBCollection.prototype.q = function (query = {}) { return q(this.getName(), query) }
 
-function LazyQuery(collectionName, query = {}) {
+function LazyQuery(collectionName, query = {}, opts = {}) {
     this.query = query;
     this.collectionName = collectionName;
+    this.opts = opts;
     //this.collection = db[collectionName];
 }
 Object.assign(LazyQuery.prototype, {
@@ -62,7 +75,14 @@ Object.assign(LazyQuery.prototype, {
         return db[this.collectionName]
     },
     find(query = {}) {
-        return this.collection().find({$and: [this.query, query]})
+        let cursor = this.collection().find({$and: [this.query, query]});
+        if (this.opts.offsetr) {
+            cursor = cursor.offeset(this.opts.offeset);
+        }
+        if (this.opts.limit) {
+            cursor = cursor.limit(this.opts.limit);
+        }
+        return cursor;
     },
     count() {  return this.collection().count(this.query) },
     at(ix) { return this.find().skip(ix).next() },
@@ -70,6 +90,7 @@ Object.assign(LazyQuery.prototype, {
     id() { return this.prop('_id' )},
     code() { return this.prop('code')},
     name() { return this.prop('name')},
+    limit(n) { return new LazyQuery(this.collectionName, this.query, {limit: n})},
 
     /** Refine the current query */
     where(q) {

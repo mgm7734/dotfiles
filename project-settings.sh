@@ -8,7 +8,7 @@ function pushd() { builtin pushd "$@" && source-project-settings; }
 function popd() { builtin popd "$@" && source-project-settings; }
 function source-project-settings() {
     file=`/bin/pwd`/PROJECT_SETTINGS
-    if [ -e $file ] ; then
+    if [ -e "$file" ] ; then
       whitelist=~/.proj-settings-whitelist
       touch $whitelist
       sum=`shasum $file`
